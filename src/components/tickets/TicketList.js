@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import "./tickets.css"
+import { Ticket } from "../tickets/Ticket"
 
 export const TicketList = ({ searchTermState }) => {
     const [tickets, setTickets] = useState([])
     const [filteredTickets, setFiltered] = useState([])
+    const [employees, setEmployees] = useState([])
     const [emergency, setEmergency] = useState(false)
     const [openOnly, updateOpenOnly] = useState(false)
     const navigate = useNavigate()
@@ -19,7 +22,7 @@ export const TicketList = ({ searchTermState }) => {
             })
             setFiltered(searchedTickets)
         },
-        [ searchTermState ]
+        [searchTermState]
     )
 
     useEffect(
@@ -35,13 +38,24 @@ export const TicketList = ({ searchTermState }) => {
         [emergency]
     )
 
-    useEffect(
-        () => {
-            fetch(`http://localhost:8088/serviceTickets`)
+    const getAllTickets = () => {
+        fetch(`http://localhost:8088/serviceTickets?_embed=employeeTickets`)
                 .then(response => response.json())
                 .then((ticketArray) => {
                     setTickets(ticketArray)
-                }) // View the initial state of tickets
+                })
+    }
+
+    useEffect(
+        () => {
+
+            getAllTickets()
+             // View the initial state of tickets
+                fetch(`http://localhost:8088/employees?_expand=user`)
+                .then(response => response.json())
+                .then((employeeArray) => {
+                    setEmployees(employeeArray)
+                })
         },
         [] // When this array is empty, you are observing initial component state
     )
@@ -102,12 +116,11 @@ export const TicketList = ({ searchTermState }) => {
         <article className="tickets">
             {
                 filteredTickets.map(
-                    (ticket) => {
-                        return <section className="ticket">
-                            <header>{ticket.description}</header>
-                            <footer>Emergency: {ticket.emergency ? "Yes" : "No"}</footer>
-                        </section>
-                    }
+                    (ticket) => <Ticket employees={employees} 
+                    getAllTickets={getAllTickets}
+                    currentUser={honeyUserObject.staff} 
+                    ticketObject={ticket}
+                     />
                 )
             }
         </article>
